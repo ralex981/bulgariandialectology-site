@@ -13,10 +13,16 @@ Every change is listed in build/cleanup-report.csv so it can be reviewed.
   5. Optional (DROP_ORPHAN_TOKENS=1): tokens that no line uses are left out. Off by default because
      most of them carry glosses, lexemes or trait annotations.
 """
-import csv, os, re
+import csv, os, re, unicodedata
 
 TEST_NODE_TITLES = {('location', 'New location'), ('phrase', 'test')}
 TEST_FILES = {'test.pdf', 'cammerontestupload.pdf'}
+
+
+def fold(alias):
+    """Key under which two URLs land on the same file on a Mac or Windows disk
+    (letter case and Unicode composition are both ignored there)."""
+    return unicodedata.normalize('NFD', alias).casefold()
 
 
 def slug(s):
@@ -62,13 +68,13 @@ def apply(c, report_path=None, drop_orphan_tokens=None):
                 drop(n, 'token not used in any line')
 
     # 3. broken aliases -> clean ones (old ones become redirects via url_alias)
-    taken = {a.lower() for a in c.alias_of.values()}
+    taken = {fold(a) for a in c.alias_of.values()}
 
     def unique(base):
         a, i = base, 0
-        while a.lower() in taken:
+        while fold(a) in taken:
             a = f'{base}-{i}'; i += 1
-        taken.add(a.lower())
+        taken.add(fold(a))
         return a
 
     for n in sorted(c.nodes.values(), key=lambda n: n.nid):
@@ -80,19 +86,21 @@ def apply(c, report_path=None, drop_orphan_tokens=None):
         c.alias_of[f'node/{n.nid}'] = n.alias
         rows.append(['new URL', n.type, n.nid, n.title, n.alias, f'was {old}'])
 
-    # 4. case-only collisions
+    # 4. URLs that differ only in letter case or accent encoding (one file on Mac/Windows disks)
     seen = {}
-    for n in sorted(c.nodes.values(), key=lambda n: n.nid):
-        if not n.status:
-            continue
-        k = n.alias.lower()
-        if k in seen and seen[k] != n.alias:
-            old = n.alias
-            n.alias = unique(n.alias)
-            c.alias_of[f'node/{n.nid}'] = n.alias
-            rows.append(['new URL', n.type, n.nid, n.title, n.alias, f'was {old} (clashed with {seen[k]})'])
+    objs = [('node', n) for n in sorted(c.nodes.values(), key=lambda n: n.nid) if n.status] + \
+           [('term', t) for t in sorted(c.terms.values(), key=lambda t: t.tid)]
+    for kind, o in objs:
+        k = fold(o.alias)
+        if k in seen and seen[k] != o.alias:
+            old = o.alias
+            o.alias = unique(o.alias)
+            src = f'node/{o.nid}' if kind == 'node' else f'taxonomy/term/{o.tid}'
+            c.alias_of[src] = o.alias
+            rows.append(['new URL', o.type if kind == 'node' else 'term', o.nid if kind == 'node' else o.tid,
+                         o.title if kind == 'node' else o.name, o.alias, f'was {old} (clashed with {seen[k]})'])
         else:
-            seen[k] = n.alias
+            seen[k] = o.alias
 
     if report_path:
         os.makedirs(os.path.dirname(report_path), exist_ok=True)

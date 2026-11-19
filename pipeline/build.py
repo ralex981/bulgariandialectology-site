@@ -474,11 +474,12 @@ class Site:
           * secondary aliases (a node with two aliases) get a small redirect page
           * /node/123 and /taxonomy/term/45 are resolved by the 404 page through a lookup table"""
         c = self.c
-        primary = {n.alias.lower() for n in c.nodes.values() if n.status} | {t.alias.lower() for t in c.terms.values()}
+        from cleanup import fold
+        primary = {fold(n.alias) for n in c.nodes.values() if n.status} | {fold(t.alias) for t in c.terms.values()}
         n_stub = 0
         for r in c.db.execute('select source, alias from url_alias'):
             src, alias = r['source'], r['alias']
-            if alias.lower() in primary or not src.startswith(('node/', 'taxonomy/term/')) or src.count('/') != 1 + src.startswith('taxonomy'):
+            if fold(alias) in primary or not src.startswith(('node/', 'taxonomy/term/')) or src.count('/') != 1 + src.startswith('taxonomy'):
                 continue
             if src.startswith('node/') and not c.node(int(src.split('/')[1])):
                 continue
