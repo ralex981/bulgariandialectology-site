@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="{{ lang|default('en') }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% if title %}{{ title }} | {% endif %}{{ site_name }}</title>
+<link rel="canonical" href="{{ canonical }}">
+{% if staging %}<meta name="robots" content="noindex, nofollow">{% endif %}
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/site.css?v={{ build_id }}">
+{% if needs_map %}<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>{% endif %}
+{% block head %}{% endblock %}
+</head>
+<body class="page-{{ page_class }}">
+<a class="skip" href="#main">Skip to main content</a>
+<header class="site-header" style="--hdr:url('/assets/headerimg/{{ header_img }}')">
+  <div class="wrap">
+    <a class="site-name" href="/">{{ site_name }}</a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav id="nav" class="main-nav" aria-label="Main menu">
+      <ul>
+      {%- for item in menu %}
+        <li class="{% if item.children %}has-sub{% endif %}{% if item.active %} active{% endif %}">
+          <a href="{{ item.href }}"{% if item.title_attr %} title="{{ item.title_attr }}"{% endif %}>{{ item.title }}</a>
+          {%- if item.children %}
+          <ul>
+          {%- for c in item.children %}
+            <li class="{% if c.children %}has-sub{% endif %}"><a href="{{ c.href }}">{{ c.title }}</a>
+            {%- if c.children %}<ul>{% for g in c.children %}<li><a href="{{ g.href }}">{{ g.title }}</a></li>{% endfor %}</ul>{% endif %}
+            </li>
+          {%- endfor %}
+          </ul>
+          {%- endif %}
+        </li>
+      {%- endfor %}
+      </ul>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+  {% if breadcrumb %}<nav class="breadcrumb" aria-label="Breadcrumb">{% for href, label in breadcrumb %}{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}<span>{{ label }}</span>{% endif %}{% if not loop.last %} » {% endif %}{% endfor %}</nav>{% endif %}
+  <div class="layout{% if sidebar %} with-sidebar{% endif %}">
+    {% if sidebar %}<aside class="sidebar">{{ sidebar }}</aside>{% endif %}
+    <main id="main">
+      {% if title and show_title|default(true) %}<h1 class="title">{{ title }}</h1>{% endif %}
+      {% block content %}{{ content }}{% endblock %}
+    </main>
+  </div>
+  <footer class="site-footer">{{ footer }}</footer>
+</div>
+<script src="/assets/site.js?v={{ build_id }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

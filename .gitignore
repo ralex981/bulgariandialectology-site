@@ -1,0 +1,7 @@
+# Inputs and outputs are not committed: the backup contains private Drupal data (user accounts etc.)
+backup/
+build/
+site/
+*.log
+__pycache__/
+.DS_Store
