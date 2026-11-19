@@ -97,7 +97,10 @@
         tbl.querySelectorAll('th').forEach(function (h) { delete h.dataset.dir; });
         th.dataset.dir = dir === 1 ? 'asc' : 'desc';
         rows.sort(function (a, b) {
-          return dir * a.cells[i].textContent.trim().localeCompare(b.cells[i].textContent.trim(), undefined, { numeric: true });
+          var x = a.cells[i].textContent.trim(), y = b.cells[i].textContent.trim();
+          var nx = parseFloat(x.replace(/,/g, '')), ny = parseFloat(y.replace(/,/g, ''));
+          if (!isNaN(nx) && !isNaN(ny) && /^[\d.,\s]+$/.test(x + y)) return dir * (nx - ny);
+          return dir * (BDLT.collate ? BDLT.collate(x, y) : x.localeCompare(y));
         });
         rows.forEach(function (r) { body.appendChild(r); });
       });

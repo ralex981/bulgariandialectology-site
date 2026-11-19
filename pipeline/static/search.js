@@ -33,6 +33,10 @@
       return D[n];
     }));
   }
+  // alphabetical order of the site's transcription (assets/collation.js); keys cached because lists are long
+  var keyCache = {};
+  function ck(s) { s = s || ''; var k = keyCache[s]; if (k === undefined) k = keyCache[s] = (window.BDLT && BDLT.collateKey) ? BDLT.collateKey(s) : String(s).toLowerCase(); return k; }
+  function cmp(a, b) { a = ck(a); b = ck(b); return a < b ? -1 : a > b ? 1 : 0; }
   function link(url, label) { return '<a href="' + esc(url) + '">' + esc(label) + '</a>'; }
 
   // Views string operators
@@ -149,12 +153,15 @@
   function pager(total, page) {
     var pages = Math.ceil(total / PAGE);
     if (pages <= 1) return '';
-    var h = '<nav class="pager" aria-label="Pages">';
-    function a(p, label) { return p === page ? '<span class="cur">' + label + '</span>' : '<a href="#" data-page="' + p + '">' + label + '</a>'; }
-    if (page > 0) h += a(0, '« first') + a(page - 1, '‹ previous');
-    for (var i = Math.max(0, page - 4); i < Math.min(pages, page + 5); i++) h += a(i, String(i + 1));
-    if (page < pages - 1) h += a(page + 1, 'next ›') + a(pages - 1, 'last »');
-    return h + '</nav>';
+    function a(p, label, cls) {
+      if (p < 0 || p >= pages) return '<span class="pg disabled ' + (cls || '') + '">' + label + '</span>';
+      return p === page ? '<span class="pg cur">' + label + '</span>' : '<a class="pg ' + (cls || '') + '" href="#" data-page="' + p + '">' + label + '</a>';
+    }
+    var h = '<nav class="pager" aria-label="Pages">' + a(page > 0 ? 0 : -1, '« First') + a(page - 1, '‹ Previous', 'wide');
+    for (var i = Math.max(0, page - 3); i < Math.min(pages, page + 4); i++) h += a(i, String(i + 1));
+    h += a(page + 1, 'Next ›', 'wide') + a(page < pages - 1 ? pages - 1 : -1, 'Last »');
+    var first = page * PAGE + 1, last = Math.min(total, (page + 1) * PAGE);
+    return h + '<span class="pg-info">Page ' + (page + 1) + ' of ' + pages + ' · showing ' + first.toLocaleString() + '–' + last.toLocaleString() + '</span></nav>';
   }
 
   // render rows grouped by a key, paginated
@@ -206,7 +213,7 @@
       rows.sort(function (a, b) {
         var la = D.lines[a[0]], lb = D.lines[b[0]];
         var ta = (textOf(la) || [''])[0], tb = (textOf(lb) || [''])[0];
-        return ta.localeCompare(tb) || (la[1] - lb[1]);
+        return cmp(ta, tb) || (la[1] - lb[1]);
       });
       return rows;
     },
@@ -259,7 +266,7 @@
         var A = D.tokens[a[0]], B = D.tokens[b[0]];
         var la = (D.lexemes[A[4]] || [''])[0], lb = (D.lexemes[B[4]] || [''])[0];
         var ta = (D.texts[a[1]] || [''])[0], tb = (D.texts[b[1]] || [''])[0];
-        return la.localeCompare(lb) || ta.localeCompare(tb) || A[0].localeCompare(B[0]);
+        return cmp(la, lb) || cmp(ta, tb) || cmp(A[0], B[0]);
       });
       return rows;
     },
@@ -304,7 +311,7 @@
         var la = D.lines[a[0]], lb = D.lines[b[0]];
         var A = locOf(la) || [''], B = locOf(lb) || [''];
         var ta = (textOf(la) || [''])[0], tb = (textOf(lb) || [''])[0];
-        return A[0].localeCompare(B[0]) || ta.localeCompare(tb) || (la[1] - lb[1]);
+        return cmp(A[0], B[0]) || cmp(ta, tb) || (la[1] - lb[1]);
       });
       return rows;
     },
@@ -335,7 +342,7 @@
       rows.sort(function (a, b) {
         var la = D.lines[D.phrases[a][2]] || [0, 0], lb = D.lines[D.phrases[b][2]] || [0, 0];
         var ta = (textOf(la) || [''])[0], tb = (textOf(lb) || [''])[0];
-        return ta.localeCompare(tb) || (la[1] - lb[1]);
+        return cmp(ta, tb) || (la[1] - lb[1]);
       });
       return rows;
     },
@@ -369,7 +376,7 @@
       });
       var key = p.order === 'nid' ? function (id) { return +id; } : null;
       rows.sort(key ? function (a, b) { return (key(a) - key(b)) * (p.sort === 'desc' ? -1 : 1); }
-                    : function (a, b) { return D.tokens[a][0].localeCompare(D.tokens[b][0]); });
+                    : function (a, b) { return cmp(D.tokens[a][0], D.tokens[b][0]); });
       return rows;
     },
     render: function (rows, page) {
@@ -402,7 +409,7 @@
         (kids[t[1]] = kids[t[1]] || []).push(+tid);
       });
       Object.keys(kids).forEach(function (k) {
-        kids[k].sort(function (a, b) { return (D.terms[a][2] - D.terms[b][2]) || D.terms[a][0].localeCompare(D.terms[b][0]); });
+        kids[k].sort(function (a, b) { return (D.terms[a][2] - D.terms[b][2]) || cmp(D.terms[a][0], D.terms[b][0]); });
       });
       boxes.forEach(function (box) {
         var hidden = box.querySelector('input[type=hidden]');

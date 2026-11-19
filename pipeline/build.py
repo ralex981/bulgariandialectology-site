@@ -13,6 +13,7 @@ from jinja2 import Environment, FileSystemLoader
 from model import Corpus, _php
 from render import esc, rich, fix_links
 import search
+from collate import key as ckey, js as collate_js
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SITE_URL = os.environ.get('SITE_URL', 'https://bulgariandialectology.org')
@@ -314,7 +315,7 @@ class Site:
         out = []
         if texts:
             out.append('<div class="block texts"><h3>Texts</h3><ul class="plain">' +
-                       ''.join(f'<li>{self.link(t)}</li>' for t in sorted(texts, key=lambda t: t.title)) + '</ul></div>')
+                       ''.join(f'<li>{self.link(t)}</li>' for t in sorted(texts, key=lambda t: ckey(t.title))) + '</ul></div>')
         out.append(self.render_default(loc))
         sb = []
         pt = self.loc_point(loc, esc(loc.title))
@@ -354,7 +355,7 @@ class Site:
 
         def key(l):
             t = c.text_of_line(l)
-            return (t.get('location_reference') or 0 if t else 0, l.get('line_number') or 0)
+            return (ckey(t.title) if t else ((), ''), l.get('line_number') or 0)
         return ''.join(f'<li>{self.link(l)} - <span class="fl">{esc(l.get("full_line"))}</span></li>'
                        for l in sorted(lines, key=key))
 
@@ -370,7 +371,7 @@ class Site:
     def page_lexeme(self, lx):
         c = self.c
         out = [self.render_default(lx)]
-        toks = sorted(c.tokens_of_lexeme.get(lx.nid, []), key=lambda t: t.title)
+        toks = sorted(c.tokens_of_lexeme.get(lx.nid, []), key=lambda t: ckey(t.title))
         if toks:
             rows = []
             for t in toks:
@@ -383,7 +384,7 @@ class Site:
     def page_generic(self, n):
         out = [self.render_default(n)]
         if n.type == 'linguistic_trait':
-            toks = sorted(self.c.tokens_of_trait.get(n.nid, []), key=lambda t: t.title)
+            toks = sorted(self.c.tokens_of_trait.get(n.nid, []), key=lambda t: ckey(t.title))
             if toks:
                 out.append('<div class="block"><h3>Tokens</h3><ul class="plain cols">' +
                            ''.join(f'<li>{self.link(t)}</li>' for t in toks) + '</ul></div>')
@@ -403,7 +404,7 @@ class Site:
             t = c.text_of_line(l)
             if t:
                 by_text.setdefault(t.nid, (t, []))[1].append(l)
-        for t, ls in sorted(by_text.values(), key=lambda x: x[0].title):
+        for t, ls in sorted(by_text.values(), key=lambda x: ckey(x[0].title)):
             out.append(f'<h3>{self.link(t)}</h3><div class="text-lines">')
             for l in sorted(ls, key=lambda l: l.get('line_number') or 0):
                 out.append(f'<section class="line"><h5><a href="{url_path(l.alias)}">{esc(l.get("line_number"))} '
@@ -417,7 +418,7 @@ class Site:
     # ------------------------------------------------------------------ listing pages
     def page_front(self):
         c = self.c
-        locs = sorted(c.by_type['location'], key=lambda n: n.title)
+        locs = sorted(c.by_type['location'], key=lambda n: ckey(n.title))
         # the old view excluded 'New Location' (MySQL compares case-insensitively)
         locs = [l for l in locs if l.title.lower() != 'new location']
         pts = [p for p in (self.loc_point(l) for l in locs) if p]
@@ -432,7 +433,7 @@ class Site:
             self.write(front.alias, front.title, body, breadcrumb=[('/', 'Home'), (None, front.title)])
 
     def page_locations(self):
-        locs = sorted([l for l in self.c.by_type['location'] if l.title.lower() != 'new location'], key=lambda n: n.title)
+        locs = sorted([l for l in self.c.by_type['location'] if l.title.lower() != 'new location'], key=lambda n: ckey(n.title))
         pts = [p for p in (self.loc_point(l) for l in locs) if p]
         content = self.map_html(pts, 480, cls='map big') + '<ul class="plain cols">' + ''.join(
             f'<li>{self.link(l)}</li>' for l in locs) + '</ul>'
@@ -455,7 +456,7 @@ class Site:
         """/status-texts: table of all texts (view status_texts, display page_1)."""
         c = self.c
         rows = []
-        for t in sorted(c.by_type['text'], key=lambda t: t.title):
+        for t in sorted(c.by_type['text'], key=lambda t: ckey(t.title)):
             loc = c.location_of_text(t)
             dg = ', '.join(c.terms[x].name for x in (loc.all('dialect_group') if loc else []) if x in c.terms)
             rows.append('<tr>' + ''.join(f'<td{cl}>{x}</td>' for cl, x in [
@@ -582,7 +583,9 @@ class Site:
         with open(os.path.join(self.out, 'robots.txt'), 'w') as f:
             f.write('User-agent: *\nDisallow: /\n' if STAGING else
                     'User-agent: *\nDisallow: /assets/data/\n')
-        open(os.path.join(self.out, '.nojekyll'), 'w').close()   # tell GitHub Pages not to run Jekyll
+        open(os.path.join(self.out, '.nojekyll'), 'w').close()
+        with open(os.path.join(dst, 'collation.js'), 'w', encoding='utf-8') as f:
+            f.write(collate_js())   # tell GitHub Pages not to run Jekyll
         if PAGES_DOMAIN:
             with open(os.path.join(self.out, 'CNAME'), 'w') as f:
                 f.write(PAGES_DOMAIN + '\n')

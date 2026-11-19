@@ -10,12 +10,20 @@ Every change is listed in build/cleanup-report.csv so it can be reviewed.
      Pathauto misconfiguration. They get clean URLs in the site's normal pattern; the old URLs keep
      working as redirects.
   4. Aliases that differ only by letter case (which clash on Mac/Windows disks) get a suffix.
-  5. Optional (DROP_ORPHAN_TOKENS=1): tokens that no line uses are left out. Off by default because
-     most of them carry glosses, lexemes or trait annotations.
+  5. Tokens that no line uses are left out (Ronelle's decision; KEEP_ORPHAN_TOKENS=1 keeps them).
+  6. Pages removed on request (Screenshots, Updates) and three PDF links repaired.
 """
 import csv, os, re, unicodedata
 
 TEST_NODE_TITLES = {('location', 'New location'), ('phrase', 'test')}
+# pages Ronelle asked to remove (Site Information > Screenshots, Site Information > Updates)
+REMOVED_PAGES = {32659: 'Screenshots', 66429: 'Future plans'}
+# links to files that exist under a different name or path
+LINK_FIXES = {
+    '/sites/default/files/Strandzha.Cyr.pdf': '/sites/default/files/Strandzha.Cyr_.pdf',
+    '/sites/default/files/vidinlom.pdf': '/sites/default/files/VidinLomCyr.pdf',
+    '/file/Alexander.2021.Shumen.pdf': '/sites/default/files/Alexander.2021.Shumen.pdf',
+}
 TEST_FILES = {'test.pdf', 'cammerontestupload.pdf'}
 
 
@@ -34,8 +42,8 @@ def slug(s):
 
 
 def apply(c, report_path=None, drop_orphan_tokens=None):
-    if drop_orphan_tokens is None:
-        drop_orphan_tokens = os.environ.get('DROP_ORPHAN_TOKENS') == '1'
+    if drop_orphan_tokens is None:      # Ronelle: leave out tokens no line uses (KEEP_ORPHAN_TOKENS=1 keeps them)
+        drop_orphan_tokens = os.environ.get('KEEP_ORPHAN_TOKENS') != '1'
     rows = []
 
     def drop(n, why):
@@ -53,6 +61,20 @@ def apply(c, report_path=None, drop_orphan_tokens=None):
     for n in c.nodes.values():
         if (n.type, n.title) in TEST_NODE_TITLES:
             drop(n, 'test/placeholder record')
+    for nid, title in REMOVED_PAGES.items():
+        n = c.nodes.get(nid)
+        if n is not None and n.title == title:
+            drop(n, 'page removed at Ronelle\'s request')
+    for n in c.nodes.values():               # repair links to misnamed files
+        for f, vals in n.f.items():
+            for i, v in enumerate(vals):
+                if isinstance(v, str) and ('.pdf' in v):
+                    w = v
+                    for old, new in LINK_FIXES.items():
+                        w = w.replace('bulgariandialectology.org' + old, 'bulgariandialectology.org' + new)
+                    if w != v:
+                        vals[i] = w
+                        rows.append(['fixed link', n.type, n.nid, n.title, n.alias, 'PDF link pointed at a missing file'])
     c.skip_files = set(TEST_FILES)
     for f in TEST_FILES:
         rows.append(['removed', 'file', '', f, 'sites/default/files/' + f, 'test upload'])

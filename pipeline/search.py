@@ -78,7 +78,9 @@ def multi_select(name, label, options, with_op=True):
            '<option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option>'
            '</select>').format(name, esc(label)) if with_op else ''
     opts = ''.join(f'<option value="{esc(k)}">{v}</option>' for k, v in options)
-    return f'<div><label>{esc(label)}</label>{ops}<select name="{name}[]" multiple>{opts}</select></div>'
+    size = max(2, min(len(options), 22))     # tall enough to show every option without scrolling
+    return (f'<div><label>{esc(label)}</label>{ops}<select name="{name}[]" multiple size="{size}">{opts}</select>'
+            '<div class="hint">Ctrl/⌘-click to pick several</div></div>')
 
 
 def single_select(name, label, options):
