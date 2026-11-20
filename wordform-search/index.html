@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wordform Search | Bulgarian Dialectology as Living Tradition</title>
+<link rel="canonical" href="https://bulgariandialectology.org/wordform-search">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/assets/favicon.ico">
+<link rel="stylesheet" href="/assets/site.css?v=922751dc">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+
+</head>
+<body class="page-search">
+<a class="skip" href="#main">Skip to main content</a>
+<header class="site-header" style="--hdr:url('/assets/headerimg/treehill.jpg')">
+  <div class="wrap">
+    <a class="site-name" href="/">Bulgarian Dialectology as Living Tradition</a>
+    <button class="nav-toggle" aria-expanded="false" aria-controls="nav">Menu</button>
+    <nav id="nav" class="main-nav" aria-label="Main menu">
+      <ul>
+        <li class="">
+          <a href="/" title="Front Page">Home</a>
+        </li>
+        <li class="">
+          <a href="/status-texts" title="See an overview of texts currently entered in the database, with associated content information and metadata.">Contents</a>
+        </li>
+        <li class="">
+          <a href="/wordform-search" title="Search for tokens in the database by grammatical or pragmatic tags.">Wordform Search</a>
+        </li>
+        <li class="">
+          <a href="/lexemes" title="Find all tokens in the database associated with standard Bulgarian lexemes or dialectal headwords (lemmas).">Lexeme Search</a>
+        </li>
+        <li class="">
+          <a href="/mapdev" title="Search for tokens in the database according to various linguistic traits of interest to dialectologists.">Linguistic Trait Search</a>
+        </li>
+        <li class="">
+          <a href="/thematic-list">Thematic content search</a>
+        </li>
+        <li class="">
+          <a href="/phrase-search">Phrase search</a>
+        </li>
+        <li class="">
+          <a href="/all_tokens_user">All Tokens</a>
+        </li>
+        <li class="">
+          <a href="/all_lexemes">All Lexemes</a>
+        </li>
+        <li class="has-sub">
+          <a href="/">Site Information</a>
+          <ul>
+            <li class="has-sub"><a href="/how-use-site">How to Use the Site</a><ul><li><a href="/how-use-site#homepage">Home Page</a></li><li><a href="/how-use-site#tableofcontents">Table of Contents</a></li><li><a href="/how-use-site#textpages">Text Pages</a></li><li><a href="/how-use-site#tokenpages">Token Pages</a></li><li><a href="/how-use-site#linepages">Line Pages</a></li><li><a href="/how-use-site#lexemepages">Lexeme Pages</a></li><li><a href="/how-use-site#wordformsearch">Wordform Search</a></li><li><a href="/how-use-site#wordformtags">Wordform Tags</a></li><li><a href="/how-use-site#lexemesearch">Lexeme Search</a></li><li><a href="/how-use-site#linguistictraitsearch">Linguistic Trait Search</a></li><li><a href="/how-use-site#linguistictraittags">Linguistic Trait Tags</a></li><li><a href="/how-use-site#thematiccontent">Thematic Content Search</a></li><li><a href="/how-use-site#phrasesearch">Phrase Search</a></li><li><a href="/how-use-site#phrasetags">Phrase Tags</a></li></ul>
+            </li>
+            <li class=""><a href="/overview-and-background">Background & Overview</a>
+            </li>
+            <li class=""><a href="/principles-data-presentation">Principles of Data Presentation</a>
+            </li>
+            <li class=""><a href="/publications-presentations">Publications & Presentations</a>
+            </li>
+            <li class=""><a href="/project-team">Project Team</a>
+            </li>
+          </ul>
+        </li>
+        <li class="has-sub">
+          <a href="/">Български</a>
+          <ul>
+            <li class=""><a href="/howtousethesitebulgarian">Как се използва сайтът</a>
+            </li>
+            <li class=""><a href="/history-site-bg">История на проекта</a>
+            </li>
+            <li class=""><a href="/principi-bg">Принципи за представяне на данните</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="/">Home</a> » <span>Wordform Search</span></nav>
+  <div class="layout">
+    
+    <main id="main">
+      <h1 class="title">Wordform Search</h1>
+      <form class="search-form" data-search="wordform" method="get"><fieldset><div><label>Lexeme Contains</label><input type="text" name="title"></div><div><label>English Translation</label><input type="text" name="field_meaning_value"></div><div><label>Case</label><select name="field_case_value_op" aria-label="Case operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_case_value[]" multiple size="4"><option value="nom">nom</option><option value="acc">acc</option><option value="dat">dat</option><option value="voc">voc</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Number</label><select name="field_number_value_op" aria-label="Number operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_number_value[]" multiple size="4"><option value="sg">sg</option><option value="pl">pl</option><option value="pl.t">pl.t</option><option value="ct">ct</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Gender</label><select name="field_gram_gender_value_op" aria-label="Gender operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_gram_gender_value[]" multiple size="4"><option value="m">m</option><option value="f">f</option><option value="n">n</option><option value="indcl">indcl</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Definiteness</label><select name="field_definiteness_value_op" aria-label="Definiteness operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_definiteness_value[]" multiple size="2"><option value="def">def</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Person</label><select name="field_person_value_op" aria-label="Person operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_person_value[]" multiple size="6"><option value="1sg">1sg</option><option value="1pl">1pl</option><option value="2sg">2sg</option><option value="2pl">2pl</option><option value="3sg">3sg</option><option value="3pl">3pl</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Verb-form</label><select name="field_tense_value_op" aria-label="Verb-form operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_tense_value[]" multiple size="13"><option value="pres">pres</option><option value="aor">aor</option><option value="impf">impf</option><option value="fut">fut</option><option value="imv">imv</option><option value="inf">inf</option><option value="cond">cond</option><option value="fut.pst">fut.pst</option><option value="L.part">L.part</option><option value="L.part.impf">L.part.impf</option><option value="P.part">P.part</option><option value="ger">ger</option><option value="vbl.n">vbl.n</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Aspect</label><select name="field_aspect_value_op" aria-label="Aspect operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_aspect_value[]" multiple size="3"><option value="I">I</option><option value="P">P</option><option value="I/P">I/P</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Particle</label><select name="field_particle_value_op" aria-label="Particle operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_particle_value[]" multiple size="8"><option value="aux">aux</option><option value="comp">comp</option><option value="cop">cop</option><option value="interr">interr</option><option value="neg">neg</option><option value="refl">refl</option><option value="rel">rel</option><option value="interrel">inter.rel</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Clitic</label><select name="field_clitic_value_op" aria-label="Clitic operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_clitic_value[]" multiple size="2"><option value="clt">clt</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Deictic</label><select name="field_deictic_value_op" aria-label="Deictic operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_deictic_value[]" multiple size="3"><option value="prox">prox</option><option value="med">med</option><option value="dist">dist</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Other</label><select name="field_other_value_op" aria-label="Other operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_other_value[]" multiple size="9"><option value="adj">adj</option><option value="an.num">an.num</option><option value="adv">adv</option><option value="coll">coll</option><option value="conj">conj</option><option value="exist">exist</option><option value="imprs">imprs</option><option value="name">name</option><option value="place">place</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Pragmatic</label><select name="field_pragmatic_value_op" aria-label="Pragmatic operator"><option value="or">Is one of</option><option value="and">Is all of</option><option value="not">Is none of</option><option value="empty">Is empty (NULL)</option><option value="not empty">Is not empty (NOT NULL)</option></select><select name="field_pragmatic_value[]" multiple size="7"><option value="adrs">adrs</option><option value="bkch">bkch</option><option value="excl">excl</option><option value="disc">disc</option><option value="hes">hes</option><option value="hort">hort</option><option value="ost">ost</option></select><div class="hint">Ctrl/⌘-click to pick several</div></div><div><label>Ending</label><input type="text" name="title_1"></div><div><label>Accent shift types</label><select name="field_ling_trait_ref_nid"><option value="">- Any -</option><option value="43193">acc adv</option><option value="43192">acc retr</option></select></div></fieldset><div class="search-actions"><button class="btn" type="submit">Apply</button><button class="btn secondary" type="reset">Reset</button><span class="result-count" aria-live="polite"></span><span class="exports" hidden><button class="btn secondary" type="button" data-export="csv">Download CSV</button> <button class="btn secondary" type="button" data-export="doc">Download Word (.doc)</button></span></div></form><div class="results-map leaflet-host" hidden></div><div class="results" aria-live="polite"></div>
+    </main>
+  </div>
+  <footer class="site-footer"><p align="justify"><font size="1">Text copyright © 2011-2016 Ronelle Alexander and Vladimir Zhobov. Texts and other parts of the website may be copied only for non-commercial, research, or educational purposes, provided the source of the material is cited accordingly. Cited material may not include the entire website or substantial portions thereof. 
+Comments and questions may be addressed to <a href="mailto:bdlt@berkeley.edu">bdlt@berkeley.edu</a>.
+
+<font size="1"><b>Recommended Model for Citations</b><code><blockquote>Bulgarian Dialectology as Living Tradition [2016] (<a href="/">http://bulgariandialectology.org</a>, visited on 1 March 2016)<br><br>
+Babjak 1: 13-15. In: Bulgarian Dialectology as Living Tradition [2016] (<a href="/">http://bulgariandialectology.org</a>, visited on 1 March 2016)</blockquote></code></footer>
+</div>
+<script src="/assets/collation.js?v=922751dc"></script>
+<script src="/assets/site.js?v=922751dc"></script>
+<script src="/assets/search.js?v=922751dc"></script>
+</body>
+</html>
