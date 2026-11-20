@@ -150,9 +150,9 @@
     if (pts.length) { mapEl.style.height = '360px'; BDLT.drawMap(mapEl, pts); }
   }
 
-  function pager(total, page) {
-    var pages = Math.ceil(total / PAGE);
-    if (pages <= 1) return '';
+  function pager(total, page, always) {
+    var pages = Math.max(1, Math.ceil(total / PAGE));
+    if (pages <= 1 && !always) return '';
     function a(p, label, cls) {
       if (p < 0 || p >= pages) return '<span class="pg disabled ' + (cls || '') + '">' + label + '</span>';
       return p === page ? '<span class="pg cur">' + label + '</span>' : '<a class="pg ' + (cls || '') + '" href="#" data-page="' + p + '">' + label + '</a>';
@@ -367,28 +367,50 @@
 
   var COLS = ['meaning'].concat(['case', 'number', 'gram_gender', 'definiteness', 'person', 'tense', 'aspect', 'particle', 'clitic', 'deictic', 'other', 'pragmatic']);
   var COL_LABELS = ['Meaning', 'Case', 'Number', 'Gender', 'Definiteness', 'Person', 'Verb Form', 'Aspect', 'Particle', 'Clitic', 'Deictic', 'Other', 'Pragmatic'];
+  // All Tokens works like a dictionary: "begins with" jumps to that point in the full alphabetical list,
+  // so First / Previous / Next / Last always move through every token. Other operators filter the list.
+  var allSorted = null;
   S.alltokens = {
     data: ['tokens'],
     always: true,
     run: function (p) {
-      var rows = Object.keys(D.tokens).filter(function (id) {
-        return !(p.title || /empty/.test(p.title_op || '')) || strMatch(p.title_op || 'starts', D.tokens[id][0], p.title || '');
-      });
-      var key = p.order === 'nid' ? function (id) { return +id; } : null;
-      rows.sort(key ? function (a, b) { return (key(a) - key(b)) * (p.sort === 'desc' ? -1 : 1); }
-                    : function (a, b) { return cmp(D.tokens[a][0], D.tokens[b][0]); });
-      return rows;
+      if (!allSorted) {
+        allSorted = Object.keys(D.tokens).sort(function (a, b) { return cmp(D.tokens[a][0], D.tokens[b][0]); });
+      }
+      var op = p.title_op || 'starts', q = p.title || '';
+      S.alltokens.matches = null; S.alltokens.startPage = 0; S.alltokens.note = '';
+      if (op === 'starts' && q) {
+        var nq = norm(q), first = -1, n = 0, m = {};
+        allSorted.forEach(function (id, i) {
+          if (norm(D.tokens[id][0]).indexOf(nq) === 0) { if (first < 0) first = i; m[id] = 1; n++; }
+        });
+        if (first < 0) {                    // no exact start: go to where it would be in the alphabet
+          var k = ck(q); first = 0;
+          while (first < allSorted.length && ck(D.tokens[allSorted[first]][0]) < k) first++;
+        }
+        S.alltokens.matches = m;
+        S.alltokens.startPage = Math.floor(Math.max(0, first) / PAGE);
+        S.alltokens.note = n.toLocaleString() + ' token' + (n === 1 ? '' : 's') + ' begin with \u201c' + q + '\u201d (highlighted), shown in the full list of ';
+        return allSorted;
+      }
+      if (!q && !/empty/.test(op)) return allSorted;
+      return allSorted.filter(function (id) { return strMatch(op, D.tokens[id][0], q); });
     },
     render: function (rows, page) {
+      var m = S.alltokens.matches || {};
+      var filtered = rows !== allSorted;
+      var bar = '<div class="dict-bar"><a class="pg" href="?">\u21e4 Beginning of all tokens</a>' +
+        '<a class="pg" href="?page=last">End of all tokens \u21e5</a>' +
+        (filtered ? '<span class="pg-info">Showing only matching tokens</span>' : '') + '</div>';
       var h = '<div class="table-scroll"><table class="data"><thead><tr><th>Token</th><th>ID</th>' +
         COL_LABELS.map(function (l) { return '<th>' + l + '</th>'; }).join('') + '<th>Lexeme</th></tr></thead><tbody>';
       rows.slice(page * PAGE, (page + 1) * PAGE).forEach(function (id) {
         var t = D.tokens[id], lx = D.lexemes[t[4]];
-        h += '<tr><td>' + link(t[1], t[0]) + '</td><td class="num">' + id + '</td><td>' + esc(t[2]) + '</td>' +
+        h += '<tr' + (m[id] ? ' class="match"' : '') + '><td>' + link(t[1], t[0]) + '</td><td class="num">' + id + '</td><td>' + esc(t[2]) + '</td>' +
           COLS.slice(1).map(function (f) { return '<td>' + esc((t[3][f] || []).join(', ')) + '</td>'; }).join('') +
           '<td>' + (lx ? link(lx[1], lx[0]) : '') + '</td></tr>';
       });
-      return pager(rows.length, page) + h + '</tbody></table></div>' + pager(rows.length, page);
+      return bar + pager(rows.length, page, true) + h + '</tbody></table></div>' + pager(rows.length, page, true) + bar;
     },
     csv: function (id) {
       var t = D.tokens[id], o = { Token: t[0], ID: id, Meaning: t[2] };
@@ -480,20 +502,32 @@
     load(s.data).then(function () {
       var t0 = performance.now();
       current = { rows: s.run(p) };
-      countEl.textContent = current.rows.length.toLocaleString() + ' result' + (current.rows.length === 1 ? '' : 's') +
+      countEl.textContent = (s.note || '') + current.rows.length.toLocaleString() + ' result' + (current.rows.length === 1 ? '' : 's') +
         ' (' + Math.round(performance.now() - t0) + ' ms)';
       exportsEl.hidden = !current.rows.length;
-      show(+(p.page || 0));
+      var pg = p.page === 'last' ? Math.max(0, Math.ceil(current.rows.length / PAGE) - 1)
+             : (p.page !== undefined ? +p.page : (s.startPage || 0));
+      show(pg);
       if (s.loc) drawResultsMap(current.rows, s.loc);
       if (scroll) resultsEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }).catch(function (e) { countEl.textContent = 'Error: ' + e.message; });
   }
   resultsEl.addEventListener('click', function (e) {
+    var d = e.target.closest('.dict-bar a');
+    if (d) {
+      e.preventDefault();
+      form.querySelectorAll('input[type=text]').forEach(function (i) { i.value = ''; });   // (not form.reset(): its handler would re-run the search)
+      var q = d.getAttribute('href').indexOf('last') >= 0 ? { page: 'last' } : {};
+      history.pushState(null, '', location.pathname + (q.page ? '?page=last' : ''));
+      execute(q, false);
+      resultsEl.scrollIntoView({ block: 'start' });
+      return;
+    }
     var a = e.target.closest('a[data-page]');
     if (!a) return;
     e.preventDefault();
     var pg = +a.dataset.page, p = readParams();
-    if (pg) p.page = pg; else delete p.page;
+    p.page = pg;
     history.pushState(null, '', '?' + toQuery(p));
     show(pg);
     resultsEl.scrollIntoView({ block: 'start' });

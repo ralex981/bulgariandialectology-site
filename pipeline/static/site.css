@@ -156,7 +156,7 @@ button.tc:hover { text-decoration: underline; }
 .results-map { height: 360px; margin-bottom: 14px; }
 h3.group { margin: 18px 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--line); font-size: 17px; }
 h3.group .sub { font-weight: 400; font-size: 15px; }
-.hits { columns: 3 300px; column-gap: 18px; }
+.hits { columns: 1; max-width: 900px; }
 .hits.grid { columns: 4 220px; }
 .hits > .hit { break-inside: avoid; margin-bottom: 8px; }
 .hits > .hit.compact { margin-bottom: 2px; }
@@ -180,3 +180,6 @@ h3.group .sub { font-weight: 400; font-size: 15px; }
 .term-tree > ul > li li { font-weight: 400; }
 .text-lines .line h5 a { color: var(--accent); }
 .search-form .hint { font-size: 12px; color: var(--muted); }
+
+.dict-bar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 10px 0; }
+table.data tr.match td { background: var(--hl); }

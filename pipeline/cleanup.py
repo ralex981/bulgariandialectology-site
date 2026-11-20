@@ -75,6 +75,16 @@ def apply(c, report_path=None, drop_orphan_tokens=None):
                     if w != v:
                         vals[i] = w
                         rows.append(['fixed link', n.type, n.nid, n.title, n.alias, 'PDF link pointed at a missing file'])
+    # pages whose Drupal title is a file-style placeholder (How_to_use_the_site.Bulgarian) take the title of
+    # the menu item that links to them (Как се използва сайтът)
+    for r in c.db.execute("select link_path, link_title from menu_links where menu_name='main-menu' and hidden=0"):
+        path = re.sub(r'^https?://(www\.)?bulgariandialectology\.org/', '', r['link_path'])
+        nid = int(path.split('/')[1]) if path.startswith('node/') and path.split('/')[1].isdigit() else \
+            next((int(src.split('/')[1]) for src, al in c.alias_of.items() if al == path and src.startswith('node/')), None)
+        n = c.nodes.get(nid) if nid else None
+        if n is not None and n.status and re.fullmatch(r'[\w.]+', n.title) and '_' in n.title:
+            rows.append(['new title', n.type, n.nid, r['link_title'], n.alias, f'was {n.title}'])
+            n.title = r['link_title']
     c.skip_files = set(TEST_FILES)
     for f in TEST_FILES:
         rows.append(['removed', 'file', '', f, 'sites/default/files/' + f, 'test upload'])

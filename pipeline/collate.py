@@ -3,7 +3,8 @@
 Follows the symbol order on the site's "Principles of Transcription" page, with consonants
 and vowels merged as in English and z added before ž:
 
-    a ɑ b c č d dz dž e ɛ e̝ f ɸ g h i ɨ y j k l m n o ɔ o̝ p r s š t u ɤ ʌ ɯ ə ə̝ v β w x z ž
+    a ɑ b c č d dz dž e ɛ e̝ f ɸ g h i ɨ y j k l m n o ɔ o̝ p r s š t u ŭ ɤ ʌ ɯ ə ə̝ v β w x z ž
+(ŭ after u, and tokens that are only punctuation last: Ronelle, review round 2)
 
 Stress marks and other diacritics that only modify a letter (à, ò, ŭ, ə̥, n', ...) are
 ignored at first, so forms with and without them sort together; they only decide the order
@@ -14,12 +15,12 @@ import json
 import unicodedata
 
 ALPHABET = ['a', 'ɑ', 'b', 'c', 'č', 'd', 'dz', 'dž', 'e', 'ɛ', 'e̝', 'f', 'ɸ', 'g', 'h', 'i', 'ɨ', 'y', 'j', 'k',
-            'l', 'm', 'n', 'o', 'ɔ', 'o̝', 'p', 'r', 's', 'š', 't', 'u', 'ɤ', 'ʌ', 'ɯ', 'ə', 'ə̝', 'v', 'β', 'w',
+            'l', 'm', 'n', 'o', 'ɔ', 'o̝', 'p', 'r', 's', 'š', 't', 'u', 'ŭ', 'ɤ', 'ʌ', 'ɯ', 'ə', 'ə̝', 'v', 'β', 'w',
             'x', 'z', 'ž']
 # characters not in the table, sorted next to the letter they are a variant of
 VARIANTS = {'æ': 'ɑ', 'ɣ': 'g', 'ı': 'i', 'ⁱ': 'i', 'ᶤ': 'ɨ', 'ɰ': 'ɯ', 'ᵚ': 'ɯ', 'ᵊ': 'ə',
             'ә': 'ə',      # Cyrillic schwa typed by mistake for ə
-            'q': 'k'}
+            'q': 'k', 'ǔ': 'ŭ'}
 # combining marks that are part of a letter in the table (e̝, o̝, ə̝, č, š, ž); all others are ignorable
 LETTER_MARKS = {'̝', '̌'}
 BG = 'абвгдежзийклмнопрстуфхцчшщъьюя'
@@ -58,6 +59,8 @@ def key(s):
             if ch.isalnum():
                 prim.append(1000 + ord(ch))       # anything else: after the alphabet, by code point
             i += 1
+    if not prim:                      # punctuation only, e.g. "[ … ]": after every word
+        prim = [99999]
     return (tuple(prim), s)
 
 
@@ -65,13 +68,13 @@ def js():
     """Browser version of key(): returns a string that compares correctly with < and >."""
     table = json.dumps({k: v for k, v in RANK.items()}, ensure_ascii=False)
     return ("window.BDLT=window.BDLT||{};(function(){var BDLT=window.BDLT,R=" + table + ",M=" + str(MAXLEN) +
-            ",LM={'\\u031d':1,'\\u030c':1};"
+            ",LM={'\\u031d':1,'\\u030c':1,'\\u0306':1};"
             "function comb(c){return /[\\u0300-\\u036f]/.test(c);}"
             "BDLT.collateKey=function(s){s=String(s==null?'':s).toLowerCase().normalize('NFD');var p='',i=0;"
             "while(i<s.length){var c=s[i];if(comb(c)&&!LM[c]){i++;continue;}var hit=false;"
             "for(var L=M;L>0;L--){var g=s.substr(i,L);if(R[g]!==undefined){p+=String.fromCharCode(0x100+R[g]);i+=L;hit=true;break;}}"
             "if(!hit){if(/[\\p{L}\\p{N}]/u.test(c))p+=String.fromCharCode(0x2000+c.charCodeAt(0));i++;}}"
-            "return p+'\\u0001'+s;};"
+            "if(!p)p='\\uffff';return p+'\\u0001'+s;};"
             "BDLT.collate=function(a,b){a=BDLT.collateKey(a);b=BDLT.collateKey(b);return a<b?-1:a>b?1:0;};})();\n")
 
 
