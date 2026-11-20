@@ -3,6 +3,7 @@
 Everything downstream (page generator, search indexes, archival export) works from
 the Corpus object built here, so Drupal's storage quirks are handled in one place."""
 import re, sqlite3
+import unicodedata
 from collections import defaultdict
 import phpserialize
 
@@ -131,7 +132,9 @@ class Corpus:
     def _load_aliases(self):
         self.alias_of = {}
         for r in self.db.execute('select source, alias from url_alias order by pid'):
-            self.alias_of[r['source']] = r['alias']          # latest wins (Drupal uses highest pid)
+            # latest wins (Drupal uses highest pid). Composed Unicode (NFC): git on a Mac rewrites decomposed
+            # file names to NFC on commit, so links must use NFC too or accented URLs 404 on GitHub Pages.
+            self.alias_of[r['source']] = unicodedata.normalize('NFC', r['alias'])
         for n in self.nodes.values():
             n.alias = self.alias_of.get(f'node/{n.nid}', f'node/{n.nid}')
         for t in self.terms.values():

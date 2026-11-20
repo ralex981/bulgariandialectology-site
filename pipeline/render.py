@@ -21,7 +21,7 @@ def autop(text):
 def fix_links(h):
     """Make links to the old site root-relative so the static copy works on any host."""
     h = SITE_HOST.sub('', h)
-    return h
+    return h.replace('href=""', 'href="/"')     # link to the bare site address -> home page
 
 
 URL_RE = re.compile(r'(?<![="\'/>\w@])((?:https?://|www\.)[^\s<>"]+[^\s<>".,;:!?)\]]|[\w.+-]+@[\w-]+(?:\.[\w-]+)+)')

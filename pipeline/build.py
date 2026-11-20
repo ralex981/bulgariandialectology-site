@@ -4,7 +4,7 @@ Usage:  python3 build.py RAW.sqlite FILES_DIR HEADERIMG_DIR OUT_DIR [--only TYPE
 
 FILES_DIR is the unpacked Drupal files directory (files_live/); audio is not copied
 (see AUDIO_BASE in config) because it is large and is better hosted separately."""
-import argparse, hashlib, json, os, random, shutil, sys, time
+import argparse, hashlib, json, os, random, shutil, sys, time, unicodedata
 from collections import defaultdict
 from urllib.parse import quote
 
@@ -28,9 +28,13 @@ GLOSS_FIELDS = ['meaning', 'case', 'number', 'gram_gender', 'definiteness', 'per
                 'particle', 'deictic', 'clitic', 'other', 'pragmatic']
 
 
+# menu items for pages the static site adds: (href of the item to follow, title, href)
+EXTRA_MENU = [('/all_tokens_user', 'All Lexemes', '/all_lexemes')]
+
+
 def url_path(alias):
-    """URL for an alias, percent-encoded the way browsers send it."""
-    return '/' + quote(alias, safe="/-._~!$&'()*+,;=:@[]")
+    """URL for an alias, percent-encoded the way browsers send it (always NFC, see model._load_aliases)."""
+    return '/' + quote(unicodedata.normalize('NFC', alias), safe="/-._~!$&'()*+,;=:@[]")
 
 
 def secs(tc):
@@ -64,7 +68,9 @@ class Site:
         self.written = 0
         self.site_name = self._var('site_name') or 'Bulgarian Dialectology as Living Tradition'
         self.blocks = {r['bid']: r['body'] for r in self.c.db.execute('select bid, body from block_custom')}
-        self.footer = rich(self.blocks.get(9, ''), 'full_html')
+        # citation model: bulgariandialectology.org without www. (Ronelle, round 3)
+        self.footer = rich(self.blocks.get(9, '').replace('://www.bulgariandialectology.org', '://bulgariandialectology.org'),
+                           'full_html')
         self.menu = self._menu()
 
     # ------------------------------------------------------------------ infra
@@ -104,11 +110,15 @@ class Site:
                 items[it['plid']]['children'].append(it)
             elif not it['plid']:
                 top.append(it)
+        # pages added for the static site (not in Drupal's main menu): placed after the item they follow
+        for after, title, href in EXTRA_MENU:
+            i = next((k for k, it in enumerate(top) if it['href'] == after), len(top) - 1)
+            top.insert(i + 1, dict(title=title, href=href, plid=0, children=[], title_attr=''))
         return top
 
     def write(self, alias, title, content, *, sidebar='', breadcrumb=None, needs_map=False, page_class='page',
               show_title=True, lang='en', head='', scripts=''):
-        alias = alias.strip('/')
+        alias = unicodedata.normalize('NFC', alias.strip('/'))
         rel = os.path.join(alias, 'index.html') if alias else 'index.html'
         path = os.path.join(self.out, rel)
         os.makedirs(os.path.dirname(path), exist_ok=True)
@@ -500,7 +510,9 @@ class Site:
             json.dump(table, f, ensure_ascii=False, separators=(',', ':'))
         notfound = ('<p>Sorry, that page could not be found.</p><p id="moved" hidden>This page has moved: '
                     '<a href="#">continue</a>.</p>'
-                    '<script>(function(){var m=/^\\/((?:node|taxonomy\\/term)\\/\\d+)/.exec(location.pathname);'
+                    '<script>(function(){try{var d=decodeURIComponent(location.pathname),n=d.normalize("NFC");'
+                    'if(n!==d){location.replace(n.split("/").map(encodeURIComponent).join("/")+location.search+location.hash);return;}}catch(e){}'
+                    'var m=/^\\/((?:node|taxonomy\\/term)\\/\\d+)/.exec(location.pathname);'
                     'if(!m)return;fetch("/assets/data/legacy.json").then(function(r){return r.json()}).then(function(t){'
                     'var a=t[m[1]];if(a){location.replace("/"+a.split("/").map(encodeURIComponent).join("/")+location.search+location.hash);}})})();</script>')
         self.write('__404', 'Page not found', notfound)

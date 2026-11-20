@@ -43,13 +43,14 @@ def export(site):
         sem = c.node(t.get('semantics'))
         tokens[t.nid] = [t.title, url_path(t.alias), t.get('meaning', ''), g, t.get('lexeme'), t.all('ling_trait_ref'),
                          sem.title if sem else '']
-    lexemes = {n.nid: [n.title, url_path(n.alias), n.all('lexical_traits')] for n in c.by_type['lexeme']}
+    # [title, url, lexical trait tids, 1 = real lexeme record (0 = placeholder node some tokens point at)]
+    lexemes = {n.nid: [n.title.strip(), url_path(n.alias), n.all('lexical_traits'), 1] for n in c.by_type['lexeme']}
     # tokens whose lexeme reference points at a non-lexeme node (e.g. the "." placeholder) still need a label
     for t in c.by_type['token']:
         lx = t.get('lexeme')
         if lx and lx not in lexemes and c.node(lx):
             n = c.node(lx)
-            lexemes[lx] = [n.title, url_path(n.alias), []]
+            lexemes[lx] = [n.title, url_path(n.alias), [], 0]
     traits = {n.nid: n.all('ling_trait') for n in c.by_type['linguistic_trait']}
     v1 = c.vocab_by_machine['vocabulary_1']
     trait_terms = {t.tid: [t.name, t.parents[0] if t.parents else 0, t.weight]
@@ -65,7 +66,9 @@ def export(site):
         with open(os.path.join(out, name), 'w', encoding='utf-8') as f:
             json.dump(obj, f, ensure_ascii=False, separators=(',', ':'))
     dump('core.json', {'locs': locs, 'texts': texts, 'lines': lines})
-    dump('tokens.json', {'tokens': tokens, 'lexemes': lexemes})
+    lex_trait_names = {t.tid: [t.name, url_path(t.alias)] for t in c.terms.values()
+                       if t.vid == c.vocab_by_machine['lexical_traits']}
+    dump('tokens.json', {'tokens': tokens, 'lexemes': lexemes, 'lexTraits': lex_trait_names})
     dump('traits.json', {'traits': traits, 'terms': trait_terms})
     dump('phrases.json', {'phrases': phrases})
     allowed = {f: list(c.allowed.get(f, {}).items()) for f in GRAM + PHRASE}
@@ -162,6 +165,11 @@ def pages(site, meta):
     f = [text_input('title', 'Token begins with', True, 'starts')]
     site.write('all_tokens_user', 'All Tokens', form(f, 'alltokens'), scripts=js,
                breadcrumb=[('/', 'Home'), (None, 'All Tokens')], page_class='search')
+
+    # All lexemes (the old site's /all_lexemes view, without its editors-only Edit column) ----------
+    f = [text_input('title', 'Search for a lexeme which', True, 'contains')]
+    site.write('all_lexemes', 'All Lexemes', form(f, 'alllexemes'), scripts=js,
+               breadcrumb=[('/', 'Home'), (None, 'All Lexemes')], page_class='search')
 
     # Thematic content: hierarchical list of terms, each linking to its passages
     v9 = c.vocab_by_machine['vocabulary_9']

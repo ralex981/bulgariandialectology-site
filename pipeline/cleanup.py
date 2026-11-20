@@ -12,6 +12,7 @@ Every change is listed in build/cleanup-report.csv so it can be reviewed.
   4. Aliases that differ only by letter case (which clash on Mac/Windows disks) get a suffix.
   5. Tokens that no line uses are left out (Ronelle's decision; KEEP_ORPHAN_TOKENS=1 keeps them).
   6. Pages removed on request (Screenshots, Updates) and three PDF links repaired.
+  7. Lexemes split where one record held two words (трън 'thorn' / Трън the town).
 """
 import csv, os, re, unicodedata
 
@@ -25,6 +26,10 @@ LINK_FIXES = {
     '/file/Alexander.2021.Shumen.pdf': '/sites/default/files/Alexander.2021.Shumen.pdf',
 }
 TEST_FILES = {'test.pdf', 'cammerontestupload.pdf'}
+# lexemes that mix two words: (lexeme nid, gloss of the tokens to move) -> title of the new lexeme
+# трън "thorn" vs the town name Трън (Ronelle, round 3)
+LEXEME_SPLITS = {(87000, 'Trŭn'): ('Трън', 'lexicon/lexemes/трън-town')}
+SPLIT_NID = 9_000_000      # new lexemes get nids above anything Drupal used
 
 
 def fold(alias):
@@ -85,6 +90,21 @@ def apply(c, report_path=None, drop_orphan_tokens=None):
         if n is not None and n.status and re.fullmatch(r'[\w.]+', n.title) and '_' in n.title:
             rows.append(['new title', n.type, n.nid, r['link_title'], n.alias, f'was {n.title}'])
             n.title = r['link_title']
+    # lexemes split in two
+    from model import Node
+    for i, ((lx, gloss), (title, alias)) in enumerate(LEXEME_SPLITS.items()):
+        old = c.nodes.get(lx)
+        moved = [t for t in c.nodes.values() if t.type == 'token' and t.get('lexeme') == lx and t.get('meaning') == gloss]
+        if old is None or not moved:
+            continue
+        new = Node(SPLIT_NID + i, 'lexeme', title, 1, old.created, old.changed)
+        new.alias = alias
+        c.nodes[new.nid] = new
+        c.alias_of[f'node/{new.nid}'] = alias
+        for t in moved:
+            t.f['lexeme'] = [new.nid]
+        rows.append(['new lexeme', 'lexeme', new.nid, title, alias,
+                     f'{len(moved)} token(s) glossed "{gloss}" moved from {old.title} ({lx})'])
     c.skip_files = set(TEST_FILES)
     for f in TEST_FILES:
         rows.append(['removed', 'file', '', f, 'sites/default/files/' + f, 'test upload'])

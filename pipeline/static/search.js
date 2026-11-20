@@ -9,7 +9,7 @@
   var mapEl = document.querySelector('.results-map');
   var countEl = form.querySelector('.result-count');
   var exportsEl = form.querySelector('.exports');
-  var PAGE = KIND === 'alltokens' ? 100 : 200;
+  var PAGE = KIND === 'alltokens' ? 100 : KIND === 'alllexemes' ? 500 : 200;
   var D = {};           // loaded data
   var current = null;   // {rows, columns(row)->[], groups}
 
@@ -417,6 +417,34 @@
       COLS.slice(1).forEach(function (f, i) { o[COL_LABELS[i + 1]] = (t[3][f] || []).join(', '); });
       o.Lexeme = (D.lexemes[t[4]] || [''])[0];
       return o;
+    }
+  };
+
+  // All Lexemes: every lexeme record, alphabetical, with its lexical traits (old /all_lexemes view)
+  S.alllexemes = {
+    data: ['tokens'],
+    always: true,
+    run: function (p) {
+      var op = p.title_op || 'contains', q = p.title || '';
+      var ids = Object.keys(D.lexemes).filter(function (id) {
+        var lx = D.lexemes[id];
+        return lx[3] && ((!q && !/empty/.test(op)) || strMatch(op, lx[0], q));
+      });
+      return ids.sort(function (a, b) { return cmp(D.lexemes[a][0], D.lexemes[b][0]); });
+    },
+    render: function (rows, page) {
+      var h = '<div class="table-scroll"><table class="data"><thead><tr><th>Lexeme</th><th>Lexical traits</th></tr></thead><tbody>';
+      rows.slice(page * PAGE, (page + 1) * PAGE).forEach(function (id) {
+        var lx = D.lexemes[id];
+        h += '<tr><td>' + link(lx[1], lx[0]) + '</td><td>' + lx[2].map(function (t) {
+          var tr = D.lexTraits[t]; return tr ? link(tr[1], tr[0]) : '';
+        }).filter(Boolean).join(', ') + '</td></tr>';
+      });
+      return pager(rows.length, page, true) + h + '</tbody></table></div>' + pager(rows.length, page, true);
+    },
+    csv: function (id) {
+      var lx = D.lexemes[id];
+      return { Lexeme: lx[0], ID: id, 'Lexical traits': lx[2].map(function (t) { return (D.lexTraits[t] || [''])[0]; }).join(', ') };
     }
   };
 
